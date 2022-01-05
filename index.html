@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Homepage</title>
+    </head>
+    <style>
+        .modal 
+        {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        .modal-content 
+        {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #aaa;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        .close 
+        {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover, .close:focus 
+        {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .footer 
+        {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            font-size: small;
+            background-color: rgb(50, 34, 138);
+            color: whitesmoke;
+            text-align:right;
+        }
+    </style>
+    <body style="padding-bottom: 100px;">
+        <h1 style="text-align: center;background-color:  rgb(50, 34, 138); color: white;">Index Compression</h1>
+        <p style ="font-style: italic; text-align: center;">
+            "People are good at intuition, living our lives. What are computers good at? Memory - Eric Schmidt"
+        </p>
+        <p style="text-align: justify; background-color: whitesmoke;">
+            With great power comes great responsibility.  Memory indeed is an area of prime concern in nearly each and every operation a computer performs and is a valuable resource, often possesing dominion over regulating the "speed" of computation.
+            Realizing its significance, utilizing it judiciously is without a doubt desirable and wise. <br><br>
+            In our IR system, we would like to store our Inverted Index in the least possible space and conserve the "all-powerful" resource. 
+            Compressing does this for us. So, before storing the Inverted Index, we involve one more step - "Index Compression" and as you would have expected, while retrieving we will need to "decompress" the information instead of using as is. 
+            <br>Fortunately, the addition of this step contributes to speeding up our system rather than bogging it down.
+        </p>
+        <p style="text-align: justify; background-color: whitesmoke;">
+            The preferred indexing scheme - Inverted indexing, stores the information classified as "Dictionary" and "Posting lists". <br>Here Dictionary contains: <br> • "terms"(obtained after tokenization, normalizing, removing stop
+            words*, stem/lemmatization* and sorting), <br>• "document frequency"(no. of documents that contain this term) and <br> • "pointers" to each postings list
+            <br><br> And the posting list record the document ids where the corresponding term appears(can be extended to store position within the document). 
+            <br>*: optional, not considered here
+            <br><br>
+            Now, to make sure you understood it right try constructing an inverted index for: <br>
+            d1: Don't be evil <br>
+            d2: Be what's next <br>
+            <button type="button" onclick="show()" id="btnID">See the Index</button>
+            <pre> 
+            <div id = "res"></div>
+            </p> 
+        </pre>
+            <strong> <label for="input" style="display:inline-block">Enter the text you want to index: </label>  </strong>
+    
+            <textarea placeholder="Document 1" rows="5" cols="50" name="input1" id="input1" style="vertical-align:top;"></textarea>
+            <textarea placeholder="Document 2" rows="5" cols="50" name="input2" id="input2" style="vertical-align:top;"></textarea>
+            <button onclick="show_index();">Show Inverted Index</button>
+        <pre>
+            <p id="dict" class="col"></p>
+        </pre>
+        <p style="text-align: justify; background-color: whitesmoke;">
+            <strong>Dictionary compression</strong>
+            If parts of the dictionary are on disk, then many more disk seeks are necessary in query
+            evaluation. Thus, the main goal of compressing the dictionary is to fit it in
+            mainmemory, or at least a large portion of it, to support high query throughput. One of the most trivial approach for storing dictionary terms is storing it as "Fixed Array Entries". 
+            But owing to varying term lengths in the dictionary which imply memory wastage due to the unoccupied space, it is not a feasible choice. 
+            Next, we could store the "Dictionary as a String" where each term can be accessed using a pointer. This offers considerable improvement over the previous approach.
+            However, it can be improved further using "Blocked Storage". We can compress the dictionary by grouping terms in the string into
+            blocks of size k and keeping a term pointer only for the first term of each block. We store the length of the term in the string as an additional byte at the beginning of the term. We thus eliminate k - 1 term
+            pointers, but need an additional k bytes for storing the length of each term. <br>
+            One source of redundancy in the dictionary is the fact that consecutive entries in an alphabetically sorted list share common
+            prefixes. This observation leads to "Front Coding". A common prefix is identified for a subsequence of the term list and then referred to with a special character. 
+            This avoids storing redundant prefixes and usually offers significant benefit in compression.
+            <br><a href="dictionary.html">Learn about Front Coding in detail here</a>
+        </p>
+        <p style="text-align: justify; background-color: whitesmoke;">
+            <strong>Posting list compression</strong>
+            Usually, any practical IR system will contain a large number of documents and storing document ids in posting is often expensive.
+            As for the terms occuring in documents with document id of higher magnitude will need more space. 
+            One observation could be that the gaps between postings are short, requiring a lot less space than used by their magnitudes. In fact, gaps for the most frequent terms
+            such as 'the', 'and', 'for' are mostly equal to 1. But the gaps for a rare term that
+            occurs only once or twice in a collection and give negligible advantage. One solution to this is "Variable Byte Encoding", where the gaps are compressed further and shorter gaps take less space.
+            <br><a href="posting.html">Learn about VB Encoding in detail here</a>
+        </p>
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <p id ="content"></p>
+            </div>
+        </div>
+        <script>
+            var modal = document.getElementById("myModal");
+            var span = document.getElementsByClassName("close")[0];
+            function fn(str) 
+            {
+                modal.style.display = "block";
+                document.getElementById("content").innerText = str;
+            }
+            span.onclick = function() 
+            {
+                modal.style.display = "none";
+            }
+            window.onclick = function(event)
+            {
+                if (event.target == modal) 
+                    modal.style.display = "none";
+            }
+            function show() 
+            {
+                document.getElementById("res").innerHTML = "";
+                document.getElementById("res").append(" Dictionary    Postings \n be         -> 1 -> 2 \n don't      -> 1  \n evil       -> 1  \n next       -> 2 \n what's     -> 2");
+                document.getElementById("res").append("\n Note: \n • Here 1 and 2 refer to the document#1(d1) and document#2(d2) \n • Terms are tokenized wrt white space \n\n There is nothing like enough practice. Go ahead and try indexing for the content of your choice!");
+            }
+            function show_index()
+            {   
+                if( document.getElementById("input1").value == "" || document.getElementById("input2").value == "")
+                {
+                    fn("Please enter content for both documents");
+                    return;
+                }
+                document.getElementById("dict").innerHTML = "";
+                var input1 = document.getElementById("input1").value.trim();
+                input1 = input1.split(" ");
+                input1 = input1.map(i => i.toLowerCase());
+                var a1 = [];
+                var c =0;
+                for(var i = 0; i < input1.length; i++)
+                {
+                    var a = [];
+                    a.push(input1[i]);
+                    a.push("1");
+                    a1.push(a);
+                    c++;
+                }
+                var input2 = document.getElementById("input2").value.trim();
+                input2 = input2.split(" ");
+                input2 = input2.map(j => j.toLowerCase());
+                for(var j = 0; j < input2.length; j++)
+                {
+                    var a = [];
+                    a.push(input2[j]);
+                    a.push("2");
+                    a1.push(a);
+                    c++;
+                }
+                a1 = a1.sort();
+                a1 = removeDuplicate(a1);
+                if(a1[0][0] == "")
+                    {
+                        a1.shift();
+                    }
+               str = "";
+                a1.push(a1[a1.length-1])
+                var div1 = document.createElement('div');
+                div1.append("Dictionary".padEnd(14, " "),"Postings");
+                document.getElementById("dict").append(div1);
+                div1.style = 'min-width: 20px; height: 20px; text-align:center; width: max-content; font-weight:bold';
+                for(var i = 0; i < a1.length; i++)
+                {
+                    if(a1[i][0])
+                    {
+                    var div = document.createElement('div');
+                    var x = (a1[i][0]);
+                    div.append (x.padEnd(10," "));
+                    div.append(" -> ");
+                    if(a1[i][0] == a1[i+1][0] && (a1[i][1] != a1[i+1][1]))
+                    {
+                        div.append("1 -> 2".padEnd(2," "));
+                        document.getElementById("dict").append(div); 
+                        i++;
+                    }
+                    else
+                        div.append(a1[i][1].padEnd(2," "));
+                    }
+                    document.getElementById("dict").append(div); 
+                    div.style = 'min-width: 20px; height: 20px; text-align:center; width: max-content;'
+                }
+            }
+            function removeDuplicate(arr) 
+            {
+                let i=0;
+                let newArr= [];
+                while(i < arr.length) 
+                {
+                    if(arr[i][0] == arr[i+1][0]) 
+                        newArr.push([arr[i][0],["1","2"]])
+                    else //if (i === (arr.length-1)) 
+                        newArr.push([arr[i][0],arr[i][1]])
+                    i++;
+                }
+                return newArr;
+            }
+            function uniqueTerms ()
+            {
+ 
+                document.getElementById("output").append(removeDuplicate(arr));
+                show(arr);
+            }
+            function removeDuplicate(arr) 
+            {
+                let i=0;
+                let newArr= [];
+                while(i < arr.length) 
+                {
+                    if(arr[i] < arr[i+1]) 
+                        newArr.push(arr[i])
+                    else if (i === (arr.length-1)) 
+                        newArr.push(arr[i])
+                    i++;
+                }
+                return newArr;
+            }
+            function removeSpaces(input)
+            {
+                while(input.search("  "))
+                    input = input.replace("  "," ");
+                return input;
+            }
+            function rem(arr, s)
+            {
+                return arr.filter(el => el !== s);
+            }
+        </script>
+        <div class="footer">
+            <p>Built as Mini Project for the course Information Retrieval under Dr. Venkatesh Vinayakarao (Sep - Dec 2021) &nbsp;
+                <br> MCS202109 Srinivas &nbsp;
+                <br> MCS202115 Shweta Bhardwaj &nbsp;
+                <br> Chennai Mathematical Institute &nbsp;
+            </p>
+        </div>
+        <br><hr>
+        <div style="background-color: whitesmoke;">
+            <strong>Recommended References</strong> <br>
+            <a href="https://nlp.stanford.edu/IR-book/pdf/irbookonlinereading.pdf">• An Introduction to Information Retrieval. Christopher D. Manning, Prabhakar Raghavan, Hinrich Schutze.</a><br>
+            <a href="https://vvtesh.github.io/teaching/IR-2021.html">• Information Retrieval course by Dr. Venkatesh Vinayakarao(Sep - Dec 2021) </a><br>
+            <a href="https://youtu.be/SU5a4wkWdHg">• Video by Dr. Venkatesh Vinayakarao</a> 
+        </div>
+    </body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head style="margin-top: 20px;">
+        <title>VB Encoding </title>
+        <div style="align-items:flex-end;"> 
+            <a href="main.html">Go to Homepage</a> &nbsp; &nbsp;
+            <a href="dictionary.html">Learn about Front Coding</a>
+        </div>
+        <h1 style="text-align: center;background-color: rgb(50, 34, 138);color:whitesmoke;">Variable Byte Encoding: Compressing Posting Lists</h1>
+        <meta charset="UTF-8">
+        <style>
+            html
+            {
+            padding-right: 5px;
+            padding-bottom: 5px;
+            padding-left: 5px;  
+            } 
+            .header
+            {
+            padding-right: 5px;
+            padding-bottom: 5px;
+            padding-left: 5px; 
+            background: rgb(50, 34, 138);
+            color: whitesmoke;
+            text-align: center;
+            font-size: 30px;
+            }
+            @keyframes example 
+            {
+                from
+                    {
+                    transform: translateX(100px);
+                    }
+            
+                to {
+                    transform: translateX(20px);
+                    }
+            }
+            .d 
+            {
+            background-color:whitesmoke;
+            }
+            .modal 
+            {
+                display: none; /* Hidden by default */
+                position: fixed; /* Stay in place */
+                z-index: 1; /* Sit on top */
+                left: 0;
+                top: 0;
+                width: 100%; /* Full width */
+                height: 100%; /* Full height */
+                overflow: auto; /* Enable scroll if needed */
+                background-color: rgb(0,0,0); /* Fallback color */
+                background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            }
+            .modal-content 
+            {
+                background-color: #fefefe;
+                margin: 15% auto; /* 15% from the top and centered */
+                padding: 20px;
+                border: 1px solid #aaa;
+                width: 80%; /* Could be more or less, depending on screen size */
+            }
+            /* The Close Button */
+            .close 
+            {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+            }
+            .close:hover, .close:focus 
+            {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+            .row 
+            {
+                display: flex;
+            }
+            .column 
+            {
+                flex: 30%;
+                font-size: medium;
+                outline-offset: -2px; 
+                padding-top: 10px;
+                padding-right: 5px;
+                padding-bottom: 10px;
+                padding-left: 5px;
+            }
+            .footer 
+            {
+                position: fixed;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                font-size: small;
+                background-color: rgb(50, 34, 138);
+                color: whitesmoke;
+                text-align:right;
+            }
+        </style>
+    </head>
+    <body style="margin: 2px; border: 2px; padding-bottom: 80px; word-wrap: break-word;">
+        <div class="content">     
+        <div class="row">
+            <div class ="column"> 
+                <input type="text" name="text" id="inputText"/>
+                <button onclick="takeInput();">Insert</button>
+                <button onclick="sortArray();">Sort</button>
+                <button onclick="gapEncode();">Gap Encode</button>
+                <button onclick="encode();">Encode Bytestream</button>
+                <input type ="button" name="Clear" value="Clear" onclick ="clearDiv();"/>
+                <p id="Text"></p> 
+                Your entered: 
+                <div id = 'division' name= "chck" class = 'd'
+                    style = 'min-width: 300px; min-height: 80px;'>
+                </div>
+                Posting list after step 1(Sorting): 
+                <div   id = 'division2' class = 'd'
+                    style = 'min-width: 300px; min-height: 80px;'>
+                </div>
+                Posting list after step 2(Gap Encoding): 
+                <div   id = 'division3' class ='d'
+                    style = 'min-width: 300px; min-height: 80px;'>
+                </div>
+                Posting list after step 3(VB Encoding): 
+                <div   id = 'division4' class = 'd'
+                    style = 'min-width: 300px; min-height: 80px;'>
+                </div>
+                Posting list after step 4(VB Encoded Bytestream): 
+                <div   id = 'division5' class = 'd'
+                    style = 'min-width: 300px; min-height: 80px;'>
+                </div>
+                <hr>
+                <strong>Reverse VB Encoding</strong><br>
+                <input type="text" name="text" id="inputStream"/>
+                <button onclick="decode();">Decode Bytestream</button>
+                <pre>
+                    <div   id = 'division6' class = 'd'
+                        style = 'min-width: 300px; min-height: 80px;'>
+                    </div>
+                </pre>
+            </div>
+            <div id="myModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <p id ="content"></p>
+                </div>
+            </div>
+            <div class="column" style="text-align: justify;">
+                <br><br><br><br>
+                Step 1: Posting list is sorted 
+                <br><br><br><br><br>
+                Step 2: Posting list is updated by Gaps between the enteries of posting
+                <br><br><br><br><br>
+                Step 3: Each entry in the posting list is encoded to 128-encoded number sequence
+                <br><br><br><br><br>
+                Step 4: Each entry sequence is converted to a Bytestream using the following method. The last 7 bits of a byte are “payload” and encode part of the gap. The first
+                bit of the byte is a Continuation Bit. It is set to 1 for the last byte of the encoded
+                gap and to 0 otherwise.
+                <br><br><br>
+                Let's do one exercise!<br>
+                Let the posting list is: 56->2->190<br>
+                Compute VB Encoding Bytestream corresponding to it 
+                <br>
+                <button name="submit" onclick="show_ex();">Show Answer</button>
+            </div>
+        </div>
+        <pre>
+            <div id = "example" style="text-align: justify; word-wrap:break-word;">
+            </div>
+        </pre>
+        <script>
+           function show_ex()
+           {
+                document.getElementById("example").innerHTML = "";
+                document.getElementById("example").append("\n\n • After Step 1 (Sorting): 2->56->190");
+                document.getElementById("example").append("\n\n • After Step 2 (Gap Encoding): 2->(56-2)->(190-56) or 2->54->134 ");
+                document.getElementById("example").append("\n\n • After Step 3 (VB Encoding): <2> <54> <1,6> [2 = 2*(1) ; 54 = 54*(1) ; 134 = 1*(128) + 6*(1)]");
+                document.getElementById("example").append("\n\n • After Step 4 (Converting encoded VB to a Bytestream): 10000010 10110110 00000001 10000110 \n [The right most 7 bits in every Byte are binary representation of the corresponding decimal number in VB encoded sequence. 2 = 0000010 ; 54 = 0110110 ; 1 = 0000001 ; 6 = 0000110 \n  The left most bit in every Byte (Continuation bit) is set to 1 for the last byte of the encoded gap and to 0 otherwise.]");
+            }
+            var encoded = "";
+            var modal = document.getElementById("myModal");
+            var span = document.getElementsByClassName("close")[0];
+            function fn(str) 
+            {
+                modal.style.display = "block";
+                document.getElementById("content").innerText = str;
+            }
+            span.onclick = function() 
+            {
+                modal.style.display = "none";
+            }
+            window.onclick = function(event)
+            {
+                if (event.target == modal) 
+                    modal.style.display = "none";
+            }
+            var array = [];        
+            var op = []; 
+            function takeInput()
+            {
+                var inputText = document.getElementById('inputText').value;
+                if(inputText!=""&&(Number.isInteger(parseInt(inputText))))
+                {
+                    array.push(inputText);
+                    // append data to the array 
+                    var div = document.createElement('div');
+                    div.innerHTML = inputText;
+                    document.getElementById('division').append(div);
+                    div.style = 'min-width: 20px; height: 20px; border: 2px solid black; display: inline-grid; text-align:center;animation-name: example;animation-duration: 1s;animation-direction: all';
+                }
+                else
+                // alert("enter valid natural number");
+                fn("Enter a valid number");
+            }
+            function sortArray()
+            {
+                array.sort(function(a, b){return a-b});
+                document.getElementById('division2').innerText = "";
+                for(let i = 0; i < array.length; i++)
+                {
+                    var div = document.createElement('div');
+                    div.innerHTML = array[i];
+                    document.getElementById('division2').append(div);
+                    div.style = 'min-width: 20px; height: 20px; border: 2px solid black; display: inline-grid; text-align:center;';
+                }
+            
+            }
+            function gapEncode()
+            {
+                if(document.getElementById('division2').innerText =="")
+                {
+                    fn("You missed a step. Please sort the list first");
+                    return;
+                }
+                array.sort(function(a, b){return a-b});
+                op[0] = array[0];
+                for(let i = 1; i < array.length; i++)
+                    op[i] = array[i] - array [i - 1];
+                document.getElementById('division3').innerText = "";
+                for(let i = 0; i < array.length; i++)
+                {
+                    var div = document.createElement('div');
+                    div.innerHTML = op[i];
+                    document.getElementById('division3').append(div);
+                    div.style = 'min-width: 20px; height: 20px; border: 2px solid black; display: inline-grid; text-align:center;';
+                }
+            }
+            function sizeOfVb(n)
+            {
+                var c = 0;
+                while(n != 0)
+                {
+                    n = Math.floor(n / 128);
+                    c++;
+                }
+                return c;
+            }
+            function decToBinary(n, f=0)
+            {
+                var num = (Number(n).toString(2));
+                var res;
+                if(f==0)
+                {   
+                    res="0";
+                }
+                else 
+                {    
+                    res="1";
+                }  
+                var x = res.concat("",(num.toString()).padStart(7,0));
+                return x;
+            }
+            function vb(c)
+            {
+                document.getElementById('division5').append("");
+                document.getElementById('division4').append("");
+                var l = sizeOfVb(c);
+                var vb = [];
+                var k = l - 1;
+                while(c!=0)
+                {
+                    if(c <128)
+                        vb[k--] = c;
+                    else 
+                        vb[k--] = c%128;;
+                    c = Math.floor(c/ 128);
+                }
+                var div = document.createElement('div');
+                var div2 = document.createElement('div');  
+                div.append("<");   
+                for(var i = 0; i <l-1; i++)
+                {
+                    div.append(vb[i]);
+                    div.append(", ");
+                    div2.append(decToBinary(vb[i]));
+                    encoded += decToBinary(vb[i]);
+                    div2.append(" ");
+                }
+                div2.append(decToBinary(vb[l-1],1));
+                encoded += decToBinary(vb[l-1],1);
+                div.append(vb[l-1]);
+                div.append("> ");
+                document.getElementById('division4').append(div);     
+                document.getElementById('division5').append(div2);
+                div.style = 'min-width: 20px; height: 20px; border: 2px solid black; display: inline-grid; text-align:center;';
+                div2.style = 'min-width: 20px; height: 20px; border: 2px solid black; display: inline-grid; text-align:center;';
+            }
+            function encode()
+            {
+                document.getElementById('division5').innerText ="";
+                document.getElementById('division4').innerText ="";
+                if(document.getElementById('division3').innerText =="")
+                {
+                    fn("You missed a steps. Please do Gap encoding first");
+                    return;
+                }
+                for(let i = 0; i < op.length; i++)
+                {
+                    if (op[i]!=0)
+                    {
+                        vb(op[i]);
+                    }
+                    else 
+                        // alert("Recall: Posting list contains unique document ids");
+                        fn("Recall: Posting list contain unique document ids");
+                }
+            }
+            function isBinary(str)
+            {
+                for(var i = 0; i < str.length; i++)
+                {
+                    if(str[i]!=0 && str[i]!=1)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            function bin2dec(bin)
+            {
+                return parseInt(bin, 2).toString(10);
+            }
+            function gapsToDec(a)
+            {
+                var gaps = [];
+                for(var i = 0; i < a.length; i++)
+                {
+                    if(a[i] < 128)
+                        gaps.push(a[i]);
+                    else 
+                    {
+                        a[i] = a[i].reverse();
+                        var s = 0;
+                        var p = 1;
+                        for(var j = 0; j < a[i].length; j++)
+                        {
+                            s += a[i][j]*p;
+                            p *= 128;
+                        }
+                        gaps.push(s);
+                    }
+                }
+                return gaps;
+            }
+            function getPosting(gaps)
+            {
+                for(var i = 1; i < gaps.length; i++)
+                {
+                    gaps[i] = parseInt(gaps[i])+parseInt(gaps[i-1]);
+                }
+                return gaps;
+            }
+            function decode()
+            {
+                document.getElementById('division6').innerHTML = "";
+                var stream = document.getElementById("inputStream").value;
+                while(stream.indexOf(" ")!=-1)
+                stream = stream.replace(" ","");
+                if(!isBinary(stream))
+                {
+                    fn("You entered an invalid binary stream. Please try again");
+                    return;
+                }
+                else
+                {
+                    var len = stream.length;
+                    if(len % 8 != 0)
+                    {
+                        fn("Please enter full Byte(s)");
+                        return;
+                    }
+                    else
+                    {
+                    var a = [];
+                    var grp = [];
+                    var i = 0;
+                    while(i < len)
+                        {
+                            if(i%8 == 0) 
+                            {
+                                if((stream[i] == 1))
+                                    {
+                                        grp.push(stream.substr(i,8));
+                                        i+=8;
+                                        continue;
+                                    }
+                                    else 
+                                    {
+                                        var cnt =1;
+                                        var j = i;
+                                        while(stream[i]!=1)
+                                        {
+                                            if(i>= len)
+                                            {
+                                                fn("Invalid input");
+                                                return;
+                                            }
+                                            cnt++;
+                                            i+=8;
+                                        }
+                                        grp.push(stream.substr(j,(cnt*8)));
+                                        // i = cnt*8;
+                                        i+=8;
+                                        continue;
+                                    }
+                            }
+                            i++;
+                        }
+                        document.getElementById('division6').append("\nBytestream for different gaps: \n");
+                        for(var i = 0; i < grp.length; i++)
+                        {
+                            document.getElementById('division6').append(grp[i]);
+                            document.getElementById('division6').append("\n");
+                        }
+                        document.getElementById('division6').append("\nEncoded Gaps: \n");
+                        var a = [];
+                        for(var i = 0; i < grp.length; i++)
+                        {
+                            if(grp[i].length == 8)
+                            {
+                                a.push(bin2dec(grp[i].substr(1,7)));
+                            }
+                            else
+                            {
+                                var a1 = [];
+                                for(var j = 1; j < grp[i].length; j+=8)
+                                {
+                                    a1.push(bin2dec(grp[i].substr(j,7)));                        
+                                }
+                                a.push(a1);
+                            }
+                        }
+                        for(var i = 0; i < a.length; i++)
+                        {
+                            document.getElementById('division6').append("<")
+                            document.getElementById('division6').append(a[i]);
+                            document.getElementById('division6').append(">");
+                            document.getElementById('division6').append("\n");
+                        }
+                        document.getElementById('division6').append("\nGaps: \n");
+                        var gaps = gapsToDec(a);
+                        document.getElementById('division6').append(gaps);
+                        document.getElementById('division6').append("\n\nThe Posting List is: \n");
+                        document.getElementById('division6').append(getPosting(gaps));
+                    }
+                } 
+            }
+            function clearDiv()
+            {
+                array = [];
+                document.getElementById('inputText').value ="";
+                document.getElementById('division').innerText ="";
+                document.getElementById('division2').innerText = "";
+                document.getElementById('division3').innerText = "";
+                document.getElementById('division4').innerText = "";
+                document.getElementById('division5').innerText = "";
+            }
+        </script>
+        <div class="footer">
+            <p>Built as Mini Project for the course Information Retrieval under Dr. Venkatesh Vinayakarao (Sep - Dec 2021) &nbsp;
+                <br> MCS202109 Srinivas &nbsp;
+                <br> MCS202115 Shweta Bhardwaj &nbsp;
+                <br> Chennai Mathematical Institute &nbsp;
+            </p>
+        </div>
+    </body>
+</html>

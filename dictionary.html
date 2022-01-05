@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+    <head style="margin-top: 20px;">
+        <title>Front Coding</title>
+        <div style="align-items:flex-end;"> 
+            <a href="main.html">Go to Homepage</a> &nbsp; &nbsp;
+            <a href="posting.html">Learn about VB Encoding</a>
+        </div>
+        <style>
+            .modal 
+            {
+                display: none; /* Hidden by default */
+                position: fixed; /* Stay in place */
+                z-index: 1; /* Sit on top */
+                left: 0;
+                top: 0;
+                width: 100%; /* Full width */
+                height: 100%; /* Full height */
+                overflow: auto; /* Enable scroll if needed */
+                background-color: rgb(0,0,0); /* Fallback color */
+                background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            }
+            .modal-content 
+            {
+                background-color: #fefefe;
+                margin: 15% auto; /* 15% from the top and centered */
+                padding: 20px;
+                border: 1px solid #aaa;
+                width: 80%; /* Could be more or less, depending on screen size */
+            }
+            .close 
+            {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+            }
+            .close:hover, .close:focus 
+            {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+            .row 
+            {
+                display: flex;
+            }
+            .column 
+            {
+                flex: 30%;
+                font-size: medium;
+                outline-offset: -2px; 
+                padding-top: 10px;
+                padding-right: 5px;
+                padding-bottom: 10px;
+                padding-left: 5px;
+            }
+            .footer 
+            {
+                position: fixed;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+                font-size: small;
+                background-color: rgb(50, 34, 138);
+                color: whitesmoke;
+                text-align:right;
+            }
+        </style>
+    </head>
+    <body style ="padding-bottom: 80px; word-wrap:break-word;">
+       <h1 style="text-align: center;background-color: rgb(50, 34, 138);color:whitesmoke;">Front Coding: Compressing Dictionary</h1>
+       <table> 
+            <tr style = "padding: 10px;"> 
+                <td>
+                    <strong> <label for="input" style="display:inline-block">Enter the text you want to index: </label>  </strong>
+                </td>
+                <td> 
+                    <textarea name="input" id="input" rows="3" cols="30" style="vertical-align:top;"> </textarea>
+                </td>
+            </tr>
+            <tr> 
+                <td>
+                    <strong> <label for="block_size" style="display:inline-block">Enter the block size(k): </label>  </strong>
+                </td>
+                <td>
+                    <input type ="text" id = "block_size"/>
+                </td>
+            </tr>  
+            <tr> 
+                <td>
+                    <strong> <label for="stop_words" style="display:inline-block">Enter the list of stop words(separate by ' '): </label>  </strong>
+                </td>
+                <td>
+                    <input type ="text" id = "stop_words"/>
+                </td>
+                <td>
+                    <button name="submit" onclick="show1();">Show Tokens</button>
+                    </td>
+                    <td>
+                        <button name="submit" onclick="show2();">Show Terms</button>
+                    </td> 
+                    <td>
+                        <button name="submit" onclick="dictAsStr();">Show Dictionary as a string</button>
+                    </td>
+                    <td>
+                        <button name="submit" onclick="showFrnt();">Show after Front Coding</button>
+                    </td> 
+                    <td>
+                        <button name="submit" onclick="smart_showFrnt();">Show after Intelligent Block Split</button>
+                    </td> 
+                    <td>
+                        <button name="submit" onclick="check_efficiency();">Check efficiency</button>
+                    </td>
+            </tr>
+        </table>
+        <div class = "row">
+            <div class = "column">
+                <pre> 
+                    Tokens: <p id = "op1" style="padding: 10px;background-color: whitesmoke;"></p>
+                    Terms (sorted and unique): <p id = "op2" style="padding: 10px;background-color: whitesmoke;"></p>
+                    Dictionary as a string: <p id = "op3" style="padding: 10px;background-color: whitesmoke;"></p>
+                    After Front Coding: <p id = "op4" style="padding: 10px;background-color: whitesmoke;"></p>
+                    After Intelligent Front Coding(max block size = 4): <p id = "op5" style="padding: 10px;background-color: whitesmoke;"></p>
+                    Comparison: <p id = "op6" style="padding: 10px;background-color: whitesmoke;"></p>
+                </pre>
+            </div>
+            <div class ="column" style="text-align: justify;"> 
+                <br><br><br>
+                Step 1: Input is tokenized wrt white spaces. 
+                <br><br><br>
+                Step 2: All the tokens are case-folded (converted to lower case) and sorted. Stop words and duplicates are removed. 
+                <br><br><br>
+                Step 3: Each term, preceded with the corresponding term length is appended to construct "Dictionary as a String".
+                <br><br><br>
+                Step 4: The terms are classified into all but one block of size 'k'. Common prefix in these groups, if any is identified and delimited with special symbol '*'. The substring followed by this common prefix(preceded by their lengths and a special symbol '⬦') are appended.
+                <br><br>
+                Step 5: The blocks instead of depending on 'k' are formed on the basis of the longest prefix amongst them such that the block are of size at most 4.
+                <br><br><br>
+                Step 6: Efficiency of Compression in different approaches is compared. We make following assumptions: <br> • Trivially, the dictionary terms are stored as array entries each of size 20 bytes and we consider this as base standard to compare the efficiency of Compressions
+                <br> • A pointer to term takes 2 bytes
+                <br><br>
+                <br> Note: <br> In Front Coding, there is a pointer to each block instead of each term. Standard Front Coding takes the block size (k) as specified by the user. <br>However, intelligent split(wrt common prefixes) involves variable block size (at most 4)
+                <br><br>Let's do one exercise!<br>
+                Take the input text: She sells sea shells on the seashore<br>
+                Block size: 3<br>
+                Stop word list: the she by<br> 
+                Now calculate the number of bytes that will be consumed when stored as "Fixed array entries", "Dictionary as a String" and after "Front Coding"<br><br>
+                <button name="submit" onclick="show_ex();">Show Answer</button>
+            </div>    
+        </div>
+        <pre> 
+            <div id = "example" style="text-align: justify; word-wrap:break-word;">
+            </div>
+        </pre>
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <p id ="content"></p>
+            </div>
+        </div>
+        <script>
+            var modal = document.getElementById("myModal");
+            var span = document.getElementsByClassName("close")[0];
+            function fn(str) 
+            {
+                modal.style.display = "block";
+                document.getElementById("content").innerText = str;
+            }
+            span.onclick = function() 
+            {
+            modal.style.display = "none";
+             }
+
+            window.onclick = function(event)
+            {
+                if (event.target == modal) 
+                modal.style.display = "none";
+            }
+           function show_ex()
+           {
+                document.getElementById("example").innerHTML = "";
+                document.getElementById("example").append("\n\n • Token would be(after splitting the input string wrt white space): \n She \n sells \n sea \n shells \n on \n the \n seashore");
+                document.getElementById("example").append("\n\n • Terms(after case folding, removing stop words and duplicates if any): \n on \n sea \n seashore \n sells\n shells");
+                document.getElementById("example").append("\n\n • Dictionary as a string will be: 2on3sea8seashore5sells6shells");
+                document.getElementById("example").append("\n\n • After front coding with block size: \n 2*on3⬦sea8⬦seashore \n 5s*ells5⬦hells");
+                document.getElementById("example").append("\n\n • After front coding with smart split: \n 2on \n 3s*ea7⬦eashore4⬦ells5⬦hells");
+                document.getElementById("example").append("\n\n • Now comparing the space required in each approach: \n Space required if terms are stored as fixed length array entries(say 20 bytes each): 100 Bytes(as there were 5 terms, 5*20) \n Space required if terms are stored as Dictionary as string(say a pointer takes 2 bytes): 39 Bytes (29 Bytes used for storing the terms and their length + 10 (5*2) Bytes to store pointer to each term) \n Space required if terms are stored in Front Coding: 37 Bytes(33 Bytes to store the terms(split as common prefix and following substring) in block of size 3, their length and special symbols + 4 bytes (2*2) for the pointer to blocks) \n Space required if terms are stored in Intelligent Front Coding(block size = 4): 34 Bytes (30 Bytes to store the terms(split as common prefix and following substring), their length and special symbols + 4(2*2) Bytes for pointer to the blocks) \n % Space reduction in Front Coding: 63% [(100-37)/100] \n % Space reduction in Intelligent Front Coding(block size = 4): 66% [(100-34)/100]");
+           }
+           var length_frntcdng = 0; 
+           var length_smartfrntcdng = 0;
+           function show1()
+           {
+               document.getElementById("op1").innerHTML ="";
+               var arr = document.getElementById("input").value.split(" ");
+               str = "";
+               for(let j = 0; j < arr.length; j++)
+               {
+                   if(arr[j])
+                   {
+                       str += arr[j] + "\n";
+                   } 
+               }
+               document.getElementById("op1").append(str);
+           }
+           function show2()
+            {
+               if (document.getElementById("op1").innerHTML== "")
+               {
+                   fn("You missed Step 1. See the tokens first");
+                   return;
+               }
+               document.getElementById("op2").innerHTML ="";
+               var stopw = document.getElementById("stop_words").value.split(" ");
+               var arr = document.getElementById("input").value.split(" ");
+               arr = arr.map(i => i.toLowerCase());  
+               stopw = stopw.map(i => i.toLowerCase());
+               for(var i = 0; i < stopw.length; i++)
+               {
+                   if(arr.indexOf(stopw[i])!=-1)
+                   {
+                      arr = arr.map(function(x)
+                      {   
+                          if(x == stopw[i])
+                          {
+                             return x.replace(stopw[i],"");
+                          }
+                          else return x;
+                      });  
+                   }
+                   else 
+                      continue;
+               }
+               arr.sort();
+               arr = removeDuplicate(arr);
+               if(arr[0] == "")
+                    {
+                        arr.shift();
+                    }
+               str = "";
+               for(let j = 0; j < arr.length; j++)
+               {
+                   if(arr[j])
+                   {
+                       str += arr[j] + "\n";
+                   } 
+               }
+               document.getElementById("op2").append(str);
+           }
+           function removeDuplicate(arr) 
+            {
+                let i=0;
+                let newArr= [];
+                while(i < arr.length) 
+                {
+                    if(arr[i] < arr[i+1]) 
+                        newArr.push(arr[i])
+                    else if (i === (arr.length-1)) 
+                        newArr.push(arr[i])
+                    i++;
+                }
+                return newArr;
+            }
+           function dictAsStr()
+           {
+            if (document.getElementById("op2").innerHTML== "")
+               {
+                   fn("You missed Step 2. See terms first");
+                   return;
+               }
+            document.getElementById("op3").innerHTML = "";
+            var stopw = document.getElementById("stop_words").value.split(" ");
+               var arr = document.getElementById("input").value.split(" ");
+               arr.sort();
+               arr = arr.map(i => i.toLowerCase());
+               for(var i = 0; i < stopw.length; i++)
+               {
+                    arr = arr.map(function(x)
+                    { 
+                        if(x == stopw[i])
+                        {
+                            return x.replace(stopw[i],"");
+                        }
+                        else return x;
+                    });
+               }
+               arr.sort();
+               arr = removeDuplicate(arr);
+               if(arr[0] == "")
+                    {
+                        arr.shift();
+                    }
+               str = "";
+               let j;
+               for(j = 0; j < arr.length; j++)
+               {
+                   if(arr[j])
+                   {
+                       str += arr[j].length + arr[j];
+                        
+                   } 
+               }
+               document.getElementById("op3").append(str);
+           }
+           function cmn(arr)
+           {
+               if (!arr[0] || arr.length ==  1) 
+                   return arr[0];
+               let i = 0;
+               while(arr[0][i] && arr.every(w => w[i] === arr[0][i]))
+                   i++;
+               return arr[0].substr(0, i);
+           }
+           function frc()
+           {
+                if (document.getElementById("op3").innerHTML== "")
+                {
+                    fn("You missed Step 3. See the Dictionary as a String");
+                    return;
+                }
+                var k = document.getElementById("block_size").value;
+                if (!k)
+                {
+                    fn("Please enter block size");
+                    return;
+                }
+                document.getElementById("op4").innerHTML = "";
+                var stopw = document.getElementById("stop_words").value.split(" ");
+                var arr = document.getElementById("input").value.split(" ");
+                arr.sort();
+                arr = arr.map(i => i.toLowerCase());
+                for(var i = 0; i < stopw.length; i++)
+                {
+                        arr = arr.map(function(x)
+                        { 
+                            if(x == stopw[i])
+                            {
+                                return x.replace(stopw[i],"");
+                            }
+                            else return x;
+                        });
+                }
+                arr.sort();
+                arr = removeDuplicate(arr);
+                if(arr[0] == "")
+                        {
+                            arr.shift();
+                        }
+                    
+                var cnt = 0; 
+                var a = [];
+                var grp = [];
+                var i = 0;
+                    while(cnt < k && i < arr.length)
+                    {
+                        a.push(arr[i]);
+                        cnt++;
+                            
+                        if(a.length == k || (i == (arr.length-1)))
+                        {
+                                grp.push(a);
+                                a =[];
+                                cnt = 0;
+                        }
+                        i++;
+                    }
+                length_frntcdng = grp.length;
+                return grp;      
+           }
+           function showFrnt()
+           {
+               var ar = frc();
+               s = "";
+               for(var i = 0; i < ar.length; i++)
+               {
+                   {
+                        if(ar[i].length == 1)
+                        {
+                            s += ar[i][0].length;
+                            s += ar[i];
+                            s += "\n";
+                        }
+                        else
+                        {
+                            c = cmn(ar[i]);
+                            {
+                                s += ar[i][0].length;
+                                s +=  c;
+                                s += "*";
+                                s += ar[i][0].substr(c.length);
+                                for (var j = 1; j < ar[i].length; j++)
+                                {
+                                    s += ar[i][j].length - c.length;
+                                    s += "⬦";
+                                    s += ar[i][j].substr(c.length);
+                                }
+                                s += "\n";
+                            }
+                        }
+                    }
+                }
+                document.getElementById("op4").innerHTML = s;   
+            }
+
+           function smart_frc()
+           {
+            if (document.getElementById("op3").innerHTML== "")
+               {
+                   fn("You missed Step 3. See the Dictionary as a String");
+                   return;
+               }
+               var stopw = document.getElementById("stop_words").value.split(" ");
+               var arr = document.getElementById("input").value.split(" ");
+               arr.sort();
+               arr = arr.map(i => i.toLowerCase());
+               for(var i = 0; i < stopw.length; i++)
+               {
+                    arr = arr.map(function(x)
+                    { 
+                        if(x == stopw[i])
+                        {
+                            return x.replace(stopw[i],"");
+                        }
+                            else return x;
+                    });
+               }
+               arr.sort();
+               arr = removeDuplicate(arr);
+               if(arr[0] == "")
+                    {
+                        arr.shift();
+                    }
+               var i = 0;
+               var j = 0;
+               if(!arr[0])
+                    j = 1;
+               var grp = [];
+               while (j < arr.length)
+               {
+                  if ((j <= arr.length-4) && (arr[j][0] == arr[j+2][0]) && (arr[j][0] == arr[j+1][0]) && (arr[j][0] == arr[j+3][0]))
+                  {
+                       var a = [];
+                       a.push(arr[j]);
+                       a.push(arr[j+1]);
+                       a.push(arr[j+2]);
+                       a.push(arr[j+3]);
+                       grp.push(a);
+                       i++;
+                       j+=4;
+                  }
+                  else if ((j <= arr.length-3) && (arr[j][0] == arr[j+2][0]) && (arr[j][0] == arr[j+1][0]))
+                  {
+                       var a = [];
+                       a.push(arr[j]);
+                       a.push(arr[j+1]);
+                       a.push(arr[j+2]);
+                       grp.push(a);
+                       i++;
+                       j+=3;
+                  }
+                  else if ((j <= arr.length-2) && arr[j][0] == arr[j+1][0])
+                  {
+                       var a = [];
+                       a.push(arr[j]);
+                       a.push(arr[j+1]);
+                       grp.push(a);
+                       i++;
+                       j+=2;
+                  }
+                  else 
+                  {
+                       var a = [];
+                       a.push(arr[j]);
+                       grp.push(a);
+                       i++;
+                       j++;
+                  }
+               }
+               length_smartfrntcdng = grp.length;
+               return grp;
+           }
+           function smart_showFrnt()
+           {
+               var ar = smart_frc();
+               s = "";
+               for(var i = 0; i < ar.length; i++)
+               {
+                    if(ar[i].length == 1)
+                    {
+                        s += ar[i][0].length;
+                        s += ar[i];
+                        s += "\n";
+                    }
+                    else
+                    {
+                        s += ar[i][0].length;
+                        c = cmn(ar[i]);
+                        s +=  c;
+                        s += "*";
+                        s += ar[i][0].substr(c.length);
+                        for (var j = 1; j < ar[i].length; j++)
+                        {
+                            s += ar[i][j].length - c.length;
+                            s += "⬦";
+                            s += ar[i][j].substr(c.length);
+                        }
+                        s += "\n";
+                    }
+               }
+               document.getElementById("op5").innerHTML = s;   
+           }
+           function check_efficiency()
+           {
+            if (document.getElementById("op2").innerHTML== "" || document.getElementById("op3").innerHTML== "" || document.getElementById("op4").innerHTML== "" || document.getElementById("op5").innerHTML== "")
+               {
+                   fn("Comparison can't be done. Please ensure all necessary fields have been computed");
+                   return;
+               }
+               var ef1 =0;
+               var ef2 =0;
+               document.getElementById("op6").innerHTML = "";
+               var k = document.getElementById("block_size").value;
+               var length_smpl = cnt_nl((document.getElementById("op2").innerHTML).toString()) ;
+               var length_dict = (document.getElementById("op3").innerHTML).toString().length + (cnt_nl(document.getElementById("op2").innerHTML)*2);
+               length_frntcdng =  (Math.ceil((length_smpl)/(k)))*2 + ((document.getElementById("op4").innerHTML).toString().length- cnt_nl(document.getElementById("op4").innerHTML));
+               length_smartfrntcdng = ((cnt_nl(document.getElementById("op5").innerHTML))*2 +(document.getElementById("op5").innerHTML).toString().length - cnt_nl((document.getElementById("op5").innerHTML)));              
+               document.getElementById("op6").append("Space required if terms are stored as fixed length array entries(say 20 bytes each): ");
+               document.getElementById("op6").append(length_smpl*20);
+               document.getElementById("op6").append("\nSpace required if terms are stored as Dictionary as string(say a pointer takes 2 bytes): ");
+               document.getElementById("op6").append(length_dict);
+               document.getElementById("op6").append("\nSpace required if terms are stored in Front Coding: ");
+               document.getElementById("op6").append(length_frntcdng);
+               document.getElementById("op6").append("\nSpace required if terms are stored in Intelligent Front Coding(block size = 4): ");
+               document.getElementById("op6").append(length_smartfrntcdng);  
+               document.getElementById("op6").append("\n% Space reduction in Front Coding: ");
+               document.getElementById("op6").append(((length_smpl*20 - length_frntcdng)/(length_smpl*20))*100 + "%");
+               document.getElementById("op6").append("\n% Space reduction in Intelligent Front Coding(block size = 4): ");
+               document.getElementById("op6").append(((length_smpl*20 - length_smartfrntcdng)/(length_smpl*20))*100 + "%");  
+           }
+           function cnt_nl(s)
+           {
+            var j = 0;
+            for(var i = 0; i<s.length; i++)
+               {
+                   if (s[i] == "\n")
+                        j++;
+               }
+               return j;
+           }
+       </script>
+       <div class="footer">
+            <p>Built as Mini Project for the course Information Retrieval under Dr. Venkatesh Vinayakarao (Sep - Dec 2021) &nbsp;
+                <br> MCS202109 Srinivas &nbsp;
+                <br> MCS202115 Shweta Bhardwaj &nbsp;
+                <br> Chennai Mathematical Institute &nbsp;
+            </p>
+        </div>
+    </body>
+</html>
